@@ -12,7 +12,9 @@ AudioFile::~AudioFile() {
 }
 
 bool AudioFile::load(const char* path) {
-    ma_result result = ma_decoder_init_file(path, nullptr, &decoder);
+    ma_decoder_config config = ma_decoder_config_init(ma_format_f32, 0, 0);
+    ma_result result = ma_decoder_init_file(path, &config, &decoder);
+
     if (result != MA_SUCCESS) {
         std::cout << "Failed to initialize decoder\n";
         return false;
@@ -27,10 +29,37 @@ bool AudioFile::load(const char* path) {
     return true;
 }
 
+float AudioFile::getMaxSample(size_t minimum, size_t maximum) const {
+    float maxSample = 0.0f;
+
+    for (size_t i = minimum; i < maximum && i < samples.size(); i++) {
+        float sample = samples[i];
+        float magnitude = std::abs(sample);
+
+        if (magnitude > maxSample) {
+            maxSample = magnitude;
+        }
+    }
+
+    return maxSample;
+}
+
 bool AudioFile::readSamples() {
+    std::cout << "Output format: " << decoder.outputFormat << '\n';
     samples.resize(frameCount * decoder.outputChannels);
     ma_uint64 framesRead = 0;
     ma_result result = ma_decoder_read_pcm_frames(&decoder, samples.data(), frameCount, &framesRead);
+
+    std::cout << "Frames read: " << framesRead << '\n';
+    std::cout << "First raw bytes: ";
+
+    unsigned char* bytes = reinterpret_cast<unsigned char*>(samples.data());
+
+    for (int i = 0; i < 16; i++) {
+        std::cout << static_cast<int>(bytes[i]) << ' ';
+    }
+
+    std::cout << '\n';
 
     if (result != MA_SUCCESS) {
         std::cout << "Failed to read samples\n";

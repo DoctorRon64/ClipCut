@@ -19,10 +19,30 @@ int main() {
     std::cout << "Frames: " << audio.getFrameCount() << '\n';
 
     const auto& samples = audio.getSamples();
-    std::cout << "Samples vector size: " << samples.size() << '\n';
-    for (size_t i = 0; i < samples.size() && i < 100; i++) {
-        std::cout << samples[i] << '\n';
+    for (size_t i = 0; i < samples.size() && i < 10; i++) {
+        std::cout << "Samples[i]" << samples[i] << '\n';
     }
+
+    size_t waveformWidth = 800;
+    size_t samplesPerColumn = samples.size() / waveformWidth;
+    std::cout << "Samples per column: " << samplesPerColumn << '\n';
+
+    size_t column = 0;
+    for (size_t start = 0; start < samples.size(); start += samplesPerColumn) {
+        size_t end = start + samplesPerColumn;
+        float maxSample = audio.getMaxSample(start, end);
+
+        //        std::cout << "max sample: " << maxSample << '\n';
+
+        std::cout << "column " << column << ": " << maxSample << '\n';
+        column++;
+    }
+
+    // float maxSample = audio.getMaxSample(0, 1000);
+    // std::cout << "Max sample 0-1000: " << maxSample << '\n';
+
+    // float maxSample2 = audio.getMaxSample(1000, 2000);
+    // std::cout << "Max sample 1000-2000: " << maxSample2 << '\n';
 
     SDL_Window* window = SDL_CreateWindow("ClipCut", 800, 600, 0);
     bool running = true;
