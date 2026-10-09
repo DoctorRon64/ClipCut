@@ -31,17 +31,68 @@ bool AudioFile::load(const char* path) {
 
 float AudioFile::getMaxSample(size_t minimum, size_t maximum) const {
     float maxSample = 0.0f;
+    maximum = std::min(maximum, samples.size());
+    for (size_t i = minimum; i < maximum; ++i) {
+        float magnitude = std::abs(samples[i]);
+        maxSample = std::max(maxSample, magnitude);
+    }
+    return maxSample;
+}
 
-    for (size_t i = minimum; i < maximum && i < samples.size(); i++) {
-        float sample = samples[i];
-        float magnitude = std::abs(sample);
-
-        if (magnitude > maxSample) {
-            maxSample = magnitude;
-        }
+size_t AudioFile::getColumnCount(size_t samplesPerColumn) const {
+    if (samplesPerColumn == 0 || samples.empty()) {
+        return 0;
     }
 
-    return maxSample;
+    return (samples.size() + samplesPerColumn - 1) / samplesPerColumn;
+}
+
+std::vector<float> AudioFile::getWaveformData(size_t samplesPerColumn) const {
+    std::vector<float> waveform;
+
+    if (samplesPerColumn == 0 || samples.empty()) {
+        return waveform;
+    }
+
+    waveform.reserve(getColumnCount(samplesPerColumn));
+
+    for (size_t start = 0; start < samples.size(); start += samplesPerColumn) {
+        size_t end = start + samplesPerColumn;
+        float maxSample = getMaxSample(start, end);
+
+        waveform.push_back(maxSample);
+    }
+
+    return waveform;
+}
+
+std::vector<WaveformPeak> AudioFile::getWaveformPeaks(size_t samplesPerColumn) const {
+    std::vector<WaveformPeak> peaks;
+
+    if (samples.empty())
+        return peaks;
+
+    samplesPerColumn = std::max<size_t>(1, samplesPerColumn);
+
+    peaks.reserve((samples.size() + samplesPerColumn - 1) / samplesPerColumn);
+    for (size_t start = 0; start < samples.size(); start += samplesPerColumn) {
+        const size_t end = std::min(
+            start + samplesPerColumn,
+            samples.size()
+        );
+
+        float minSample = 0.0f;
+        float maxSample = 0.0f;
+
+        for (size_t i = start; i < end; ++i) {
+            minSample = std::min(minSample, samples[i]);
+            maxSample = std::max(maxSample, samples[i]);
+        }
+
+        peaks.push_back({ minSample, maxSample });
+    }
+
+    return peaks;
 }
 
 bool AudioFile::readSamples() {

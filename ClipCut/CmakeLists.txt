@@ -1,8 +1,9 @@
 project(ClipCut LANGUAGES C CXX)
 
-add_executable(${PROJECT_NAME} main.cpp src/audioFile.cpp)
+add_executable(${PROJECT_NAME} main.cpp src/audioFile.cpp src/waveformRenderer.cpp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/libs/miniaudio)
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE pch.h)
+ 
