@@ -137,3 +137,79 @@ ma_uint32 AudioFile::getSampleRate() const {
 ma_uint32 AudioFile::getChannels() const {
     return decoder.outputChannels;
 }
+
+bool AudioFile::exportRange(
+    const char* path,
+    size_t startFrame,
+    size_t endFrame
+) const {
+    const size_t channels = getChannels();
+    const size_t frameCount = getFrameCount();
+
+    if (channels == 0 ||
+        startFrame >= endFrame ||
+        endFrame > frameCount) {
+        return false;
+    }
+
+    const float* startSample = samples.data() + startFrame * channels;
+    const size_t selectedFrames = endFrame - startFrame;
+
+    ma_encoder_config config = ma_encoder_config_init(
+        ma_encoding_format_wav,
+        ma_format_f32,
+        static_cast<ma_uint32>(channels),
+        getSampleRate()
+    );
+
+    ma_encoder encoder;
+
+    if (ma_encoder_init_file(path, &config, &encoder) != MA_SUCCESS) {
+        return false;
+    }
+
+    ma_uint64 framesWritten = 0;
+
+    float minSample = 1.0f;
+    float maxSample = -1.0f;
+
+    for (size_t i = 0; i < selectedFrames * channels; i++) {
+        minSample = std::min(minSample, startSample[i]);
+        maxSample = std::max(maxSample, startSample[i]);
+    }
+
+    std::cout << "Export sample range: "
+        << minSample << " to " << maxSample << '\n';
+
+    std::cout << "Channels: " << channels
+        << ", Sample rate: " << getSampleRate()
+        << ", Frames: " << selectedFrames << '\n';
+
+
+    for (size_t i = 0; i < 10 && i < selectedFrames * channels; i++) {
+        std::cout << startSample[i] << ' ';
+    }
+    std::cout << '\n';
+
+
+    ma_result result = ma_encoder_write_pcm_frames(
+        &encoder,
+        startSample,
+        selectedFrames,
+        &framesWritten
+    );
+
+    std::cout << "Encoder format: " << config.format << '\n';
+    std::cout << "Encoder channels: " << config.channels << '\n';
+    std::cout << "Encoder sample rate: " << config.sampleRate << '\n';
+
+    std::cout << "Export successful: clip.wav\n";
+    std::cout << "Encoder result: " << result
+        << ", frames written: " << framesWritten
+        << " / " << selectedFrames << '\n';
+
+
+    ma_encoder_uninit(&encoder);
+
+    return result == MA_SUCCESS && framesWritten == selectedFrames;
+}

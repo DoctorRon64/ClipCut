@@ -26,6 +26,8 @@ public:
     ma_uint32 getSampleRate() const;
     ma_uint32 getChannels() const;
 
+    bool exportRange(const char* path, size_t startFrame, size_t endFrame) const;
+
 private:
     ma_decoder decoder{};
     ma_uint64 frameCount = 0;
